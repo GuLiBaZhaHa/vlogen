@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#E8623A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VlogEng">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>VlogEng</title>
+  <style>
+    /* ===== VARIABLES ===== */
+    :root {
+      --orange: #E8623A;
+      --orange-dark: #c9512d;
+      --bg: #FAF8F4;
+      --card: #FFFFFF;
+      --dark: #1A1A18;
+      --gray: #5A5750;
+      --border: #E4DFD6;
+      --font: -apple-system, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* ===== RESET ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--dark); overflow: hidden; height: 100dvh; }
+    button { font-family: var(--font); cursor: pointer; }
+    input, textarea { font-family: var(--font); }
+    a { text-decoration: none; color: inherit; }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; width: 100%; height: 100dvh; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ===== LOADING ===== */
+    #s-loading { align-items: center; justify-content: center; background: var(--bg); gap: 24px; }
+    .loading-logo { font-size: 52px; font-weight: 900; color: var(--orange); letter-spacing: -2px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== AUTH ===== */
+    #s-auth { align-items: center; justify-content: center; background: var(--bg); padding: 20px; overflow-y: auto; }
+    .auth-wrap { width: 100%; max-width: 400px; }
+    .auth-logo { text-align: center; font-size: 40px; font-weight: 900; color: var(--orange); margin-bottom: 6px; }
+    .auth-tagline { text-align: center; color: var(--gray); font-size: 13px; margin-bottom: 28px; }
+    .auth-card { background: var(--card); border-radius: 20px; padding: 28px 24px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+    .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 22px; }
+    .auth-tab { flex: 1; text-align: center; padding: 10px; font-size: 15px; font-weight: 600; color: var(--gray); border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; transition: all .2s; }
+    .auth-tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--gray); margin-bottom: 6px; letter-spacing: .5px; text-transform: uppercase; }
+    .form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; outline: none; transition: border-color .2s; background: var(--bg); }
+    .form-group input:focus { border-color: var(--orange); background: #fff; }
+    .btn { display: block; width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all .15s; }
+    .btn-primary { background: var(--orange); color: #fff; }
+    .btn-primary:hover { background: var(--orange-dark); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-google { background: #fff; color: var(--dark); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; }
+    .btn-google:hover { background: var(--bg); }
+    .divider { text-align: center; color: var(--gray); font-size: 12px; margin: 16px 0; position: relative; }
+    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: var(--border); }
+    .divider::before { left: 0; } .divider::after { right: 0; }
+    .auth-err { color: #e53e3e; font-size: 13px; margin-top: 12px; text-align: center; min-height: 18px; }
+
+    /* ===== MAIN SCREEN (Home tabs) ===== */
+    #s-main { background: var(--bg); }
+    .main-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .main-tab { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .main-tab.active { display: flex; }
+    .bottom-nav { display: flex; background: var(--card); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0 8px; gap: 3px; cursor: pointer; color: var(--gray); border: none; background: none; }
+    .nav-item.active { color: var(--orange); }
+    .nav-icon { font-size: 22px; line-height: 1; }
+    .nav-label { font-size: 10px; font-weight: 600; }
+
+    /* ===== NAVBAR ===== */
+    .navbar { background: var(--card); padding: 14px 16px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+    .navbar-logo { font-size: 22px; font-weight: 900; color: var(--orange); flex: 1; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+    .icon-btn:hover { background: var(--border); }
+
+    /* ===== SEARCH ===== */
+    .search-wrap { padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
+    .search-inner { position: relative; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray); font-size: 15px; pointer-events: none; }
+    .search-input { width: 100%; padding: 9px 14px 9px 36px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 14px; outline: none; background: var(--bg); }
+    .search-input:focus { border-color: var(--orange); }
+
+    /* ===== CATEGORIES ===== */
+    .categories { display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; scrollbar-width: none; background: var(--card); }
+    .categories::-webkit-scrollbar { display: none; }
+    .cat-chip { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: all .2s; background: var(--card); color: var(--gray); flex-shrink: 0; }
+    .cat-chip.active { background: var(--orange); border-color: var(--orange); color: #fff; }
+
+    /* ===== VIDEO GRID ===== */
+    .video-grid { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+    @media (min-width: 600px) { .video-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 900px) { .video-grid { grid-template-columns: repeat(4, 1fr); } }
+    .video-card { background: var(--card); border-radius: 12px; overflow: hidden; cursor: pointer; box-shadow: 0 1px 6px rgba(0,0,0,.06); transition: transform .2s, box-shadow .2s; }
+    .video-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.1); }
+    .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: var(--border); }
+    .video-info { padding: 10px; }
+    .video-title { font-size: 13px; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .video-meta { font-size: 11px; color: var(--gray); margin-top: 4px; }
+    .video-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; background: rgba(232,98,58,.12); color: var(--orange); font-size: 10px; font-weight: 700; margin-right: 4px; }
+    .grid-empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--gray); }
+    .grid-empty-icon { font-size: 52px; margin-bottom: 12px; }
+    .fav-btn { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.45); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .kw { color: var(--orange); font-weight: 700; cursor: pointer; border-bottom: 1px dotted var(--orange); }
+
+    /* ===== PLAYER SCREEN ===== */
+    #s-player { background: #111; }
+    .player-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #000; flex-shrink: 0; }
+    .back-btn { background: none; border: none; color: #fff; font-size: 24px; padding: 2px 6px; line-height: 1; }
+    .player-title-text { flex: 1; font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mode-bar { display: flex; background: rgba(255,255,255,.1); border-radius: 8px; padding: 2px; gap: 2px; flex-shrink: 0; }
+    .mode-btn { padding: 5px 10px; border-radius: 6px; border: none; background: none; color: rgba(255,255,255,.6); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .mode-btn.active { background: var(--orange); color: #fff; }
+
+    /* YouTube container */
+    .yt-wrap { position: relative; width: 100%; background: #000; flex-shrink: 0; }
+    .yt-ratio { padding-top: 56.25%; position: relative; }
+    #ytPlayer { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    /* Speed bar */
+    .speed-bar { display: flex; align-items: center; gap: 6px; padding: 7px 14px; background: #1a1a1a; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+    .speed-bar::-webkit-scrollbar { display: none; }
+    .speed-lbl { color: var(--gray); font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+    .speed-btn { padding: 4px 10px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,.2); background: none; color: rgba(255,255,255,.7); font-size: 12px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+    .speed-btn:hover { border-color: rgba(255,255,255,.5); }
+    .speed-btn.active { background: var(--orange); border-color: var(--orange); color: #fff; }
+    .speed-bar .gap { flex: 1; }
+    .ctrl-btn { padding: 4px 10px; border-radius: 12px; border: 1.5px solid; font-size: 12px; font-weight: 600; white-space: nowrap; flex-shrink: 0; background: none; }
+    .ctrl-btn-loop { border-color: rgba(255,255,255,.3); color: rgba(255,255,255,.7); }
+    .ctrl-btn-loop.looping { background: var(--orange); border-color: var(--orange); color: #fff; }
+    .ctrl-btn-immersive { border-color: var(--orange); color: var(--orange); }
+
+    /* Content panel */
+    .content-panel { flex: 1; background: var(--card); display: flex; flex-direction: column; overflow: hidden; }
+    .panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .panel-tab { flex: 1; text-align: center; padding: 12px; font-size: 13px; font-weight: 600; color: var(--gray); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
+    .panel-tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+    .panel-body { flex: 1; overflow-y: auto; }
+    .panel-pane { display: none; }
+    .panel-pane.active { display: block; }
+
+    /* Subtitle list */
+    .sub-list { }
+    .sub-item { display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,.04); cursor: pointer; transition: background .15s; }
+    .sub-item:hover { background: var(--bg); }
+    .sub-item.active { background: rgba(232,98,58,.07); border-left: 3px solid var(--orange); }
+    .sub-item.active .sub-en { color: var(--orange); }
+    .sub-left { flex-shrink: 0; padding-top: 2px; }
+    .sub-time { font-size: 10px; color: var(--gray); font-variant-numeric: tabular-nums; }
+    .sub-right { flex: 1; }
+    .sub-en { font-size: 14px; line-height: 1.5; font-weight: 500; }
+    .sub-zh { font-size: 12px; color: var(--gray); margin-top: 2px; line-height: 1.4; }
+    .sub-empty { text-align: center; padding: 48px 20px; color: var(--gray); }
+
+    /* ===== WORD BOOK SCREEN ===== */
+    .wordbook-list { flex: 1; overflow-y: auto; padding: 12px; }
+    .word-card { background: var(--card); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+    .word-top { display: flex; align-items: baseline; gap: 8px; }
+    .word-word { font-size: 18px; font-weight: 700; color: var(--dark); }
+    .word-phonetic { font-size: 13px; color: var(--gray); }
+    .word-type { font-size: 11px; color: var(--orange); font-weight: 700; background: rgba(232,98,58,.1); padding: 1px 6px; border-radius: 4px; }
+    .word-def { font-size: 14px; color: var(--gray); margin-top: 6px; }
+    .word-ex { font-size: 13px; color: var(--dark); margin-top: 4px; font-style: italic; border-left: 2px solid var(--orange); padding-left: 8px; }
+    .word-del { margin-top: 8px; font-size: 12px; color: #e53e3e; background: none; border: none; cursor: pointer; }
+    .wordbook-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray); gap: 12px; }
+
+    /* ===== STATS SCREEN ===== */
+    .stats-scroll { flex: 1; overflow-y: auto; padding: 16px; }
+    .stats-card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+    .stats-card h3 { font-size: 14px; color: var(--gray); margin-bottom: 14px; font-weight: 600; }
+    .streak-row { display: flex; gap: 20px; }
+    .streak-item { flex: 1; text-align: center; }
+    .streak-num { font-size: 36px; font-weight: 900; color: var(--orange); line-height: 1; }
+    .streak-label { font-size: 12px; color: var(--gray); margin-top: 4px; }
+    #heatmap-canvas { width: 100%; height: 48px; border-radius: 6px; }
+    .recent-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .recent-thumb { width: 56px; height: 42px; border-radius: 6px; object-fit: cover; background: var(--border); flex-shrink: 0; }
+    .recent-info { flex: 1; }
+    .recent-title { font-size: 13px; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .recent-progress { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; }
+    .recent-bar { height: 100%; background: var(--orange); border-radius: 2px; }
+
+    /* ===== PROFILE SCREEN ===== */
+    .profile-scroll { flex: 1; overflow-y: auto; }
+    .profile-header { background: var(--card); padding: 28px 20px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
+    .profile-avatar { width: 64px; height: 64px; border-radius: 50%; background: rgba(232,98,58,.15); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+    .profile-email { font-size: 14px; color: var(--gray); margin-top: 2px; }
+    .profile-name { font-size: 18px; font-weight: 700; }
+    .profile-menu { }
+    .menu-item { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); cursor: pointer; }
+    .menu-item:hover { background: var(--bg); }
+    .menu-icon { font-size: 20px; width: 28px; text-align: center; }
+    .menu-label { flex: 1; font-size: 15px; }
+    .menu-arrow { color: var(--gray); }
+
+    /* ===== ADMIN SCREEN ===== */
+    #s-admin { background: var(--bg); }
+    .admin-header { background: var(--card); padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .admin-header h1 { font-size: 18px; font-weight: 700; }
+    .admin-scroll { flex: 1; overflow-y: auto; padding: 16px; }
+    .admin-section { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+    .admin-section h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    .admin-input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; margin-bottom: 10px; outline: none; background: var(--bg); }
+    .admin-input:focus { border-color: var(--orange); }
+    .admin-textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 12px; font-family: 'Courier New', monospace; min-height: 130px; resize: vertical; outline: none; background: var(--bg); }
+    .admin-textarea:focus { border-color: var(--orange); }
+    .btn-inline { display: inline-block; width: auto; padding: 10px 20px; }
+    .admin-status { margin-top: 12px; font-size: 13px; color: var(--gray); padding: 10px 14px; background: var(--bg); border-radius: 8px; line-height: 1.5; white-space: pre-line; }
+    .admin-vid-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .admin-vid-thumb { width: 60px; height: 45px; border-radius: 8px; object-fit: cover; background: var(--border); flex-shrink: 0; }
+    .admin-vid-info { flex: 1; }
+    .admin-vid-title { font-size: 13px; font-weight: 600; }
+    .admin-vid-sub { font-size: 11px; color: var(--gray); margin-top: 2px; }
+    .admin-del-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px; }
+
+    /* ===== IMMERSIVE OVERLAY ===== */
+    #immersive { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
+    #immersive.active { display: flex; }
+    .imm-yt-wrap { width: 100%; flex-shrink: 0; }
+    .imm-yt-ratio { padding-top: 56.25%; position: relative; }
+    #immYtPlayer { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .imm-sub-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 20px; position: relative; }
+    .imm-en { font-size: 22px; font-weight: 700; color: #fff; text-align: center; line-height: 1.5; }
+    .imm-zh { font-size: 15px; color: rgba(255,255,255,.7); text-align: center; margin-top: 10px; line-height: 1.4; }
+    .imm-controls { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .imm-btn { padding: 6px 10px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.25); border-radius: 8px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .imm-btn.active { background: var(--orange); border-color: var(--orange); }
+    .imm-tap-zone { position: absolute; inset: 0; z-index: -1; }
+
+    /* ===== WORD DETAIL SHEET ===== */
+    #word-sheet { display: none; position: fixed; inset: 0; z-index: 400; }
+    #word-sheet.active { display: block; }
+    .sheet-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.4); }
+    .sheet-panel { position: absolute; bottom: 0; left: 0; right: 0; background: var(--card); border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); max-height: 60vh; overflow-y: auto; }
+    .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+    .sheet-word { font-size: 28px; font-weight: 800; color: var(--dark); }
+    .sheet-phonetic { font-size: 16px; color: var(--gray); margin-top: 4px; }
+    .sheet-def { font-size: 16px; margin-top: 12px; }
+    .sheet-ex { font-size: 14px; color: var(--gray); margin-top: 8px; font-style: italic; border-left: 2px solid var(--orange); padding-left: 10px; line-height: 1.6; }
+    .sheet-save-btn { margin-top: 16px; }
+
+    /* ===== VOCAB TAB (Phase 2 placeholder) ===== */
+    .vocab-placeholder { padding: 20px 16px; }
+    .vocab-list { }
+    .vocab-item { background: var(--card); border-radius: 12px; padding: 14px; margin-bottom: 10px; border-left: 3px solid var(--orange); cursor: pointer; }
+    .vocab-word { font-size: 16px; font-weight: 700; }
+    .vocab-phonetic { font-size: 12px; color: var(--gray); margin-left: 6px; }
+    .vocab-def { font-size: 13px; color: var(--gray); margin-top: 4px; }
+    .vocab-save { float: right; background: none; border: none; font-size: 20px; cursor: pointer; }
+    .vocab-saved { color: var(--orange); }
+
+    /* ===== READING TAB ===== */
+    .reading-pane { padding: 20px; }
+    .reading-sentence { font-size: 18px; font-weight: 600; text-align: center; line-height: 1.6; margin-bottom: 20px; color: var(--dark); }
+    .reading-sub { font-size: 13px; color: var(--gray); text-align: center; margin-bottom: 24px; }
+    .btn-record { width: 80px; height: 80px; border-radius: 50%; border: none; font-size: 32px; margin: 0 auto 16px; display: block; background: rgba(232,98,58,.1); transition: all .2s; }
+    .btn-record:hover { background: rgba(232,98,58,.2); }
+    .btn-record.recording { background: #e53e3e; animation: pulse .8s infinite; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    .reading-score { text-align: center; }
+    .score-circle { width: 80px; height: 80px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 28px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+    .score-feedback { font-size: 14px; color: var(--gray); line-height: 1.6; }
+
+    /* ===== TOAST ===== */
+    #toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px); background: rgba(26,26,24,.9); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: all .3s; z-index: 600; white-space: nowrap; pointer-events: none; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== SKELETON ===== */
+    .skeleton { background: linear-gradient(90deg, var(--border) 25%, #f0ede8 50%, var(--border) 75%); background-size: 200% 100%; animation: skel 1.2s infinite; border-radius: 6px; }
+    @keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* ===== LANDSCAPE ===== */
+    @media (orientation: landscape) and (max-height: 500px) {
+      #s-player { flex-direction: row; }
+      .yt-wrap { width: 60%; }
+      .player-header { display: none; }
+      .content-panel { border-left: 1px solid #333; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== LOADING ========== -->
+<div id="s-loading" class="screen active">
+  <div class="loading-logo">VlogEng</div>
+  <div class="spinner"></div>
+</div>
+
+<!-- ========== AUTH ========== -->
+<div id="s-auth" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-logo">VlogEng</div>
+    <div class="auth-tagline">跟着真实 YouTube Vlog 学地道英语</div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">登录</div>
+        <div class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">注册</div>
+      </div>
+
+      <!-- Login -->
+      <div id="form-login">
+        <div class="form-group"><label>邮箱</label><input type="email" id="login-email" placeholder="your@email.com" autocomplete="email"></div>
+        <div class="form-group"><label>密码</label><input type="password" id="login-pwd" placeholder="••••••••" autocomplete="current-password"></div>
+        <button class="btn btn-primary" onclick="doLogin()">登录</button>
+        <div class="divider">或</div>
+        <button class="btn btn-google" onclick="doGoogle()"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/></svg>使用 Google 登录</button>
+      </div>
+
+      <!-- Register -->
+      <div id="form-register" style="display:none">
+        <div class="form-group"><label>邮箱</label><input type="email" id="reg-email" placeholder="your@email.com" autocomplete="email"></div>
+        <div class="form-group"><label>密码（至少 6 位）</label><input type="password" id="reg-pwd" placeholder="••••••••" autocomplete="new-password"></div>
+        <button class="btn btn-primary" onclick="doRegister()">创建账号</button>
+        <div class="divider">或</div>
+        <button class="btn btn-google" onclick="doGoogle()"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/></svg>使用 Google 注册</button>
+      </div>
+
+      <div id="auth-err" class="auth-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MAIN (Home / WordBook / Stats / Profile) ========== -->
+<div id="s-main" class="screen">
+  <div class="main-body">
+
+    <!-- HOME TAB -->
+    <div id="tab-home" class="main-tab active">
+      <div class="navbar">
+        <div class="navbar-logo">VlogEng</div>
+        <button class="icon-btn" id="admin-btn" style="display:none" onclick="goAdmin()" title="管理员">⚙️</button>
+      </div>
+      <div class="search-wrap">
+        <div class="search-inner">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="search-input" placeholder="搜索视频..." oninput="filterVideos()">
+        </div>
+      </div>
+      <div class="categories" id="categories-bar">
+        <div class="cat-chip active" onclick="selectCat('')">全部</div>
+      </div>
+      <div class="video-grid" id="video-grid">
+        <div class="grid-empty"><div class="grid-empty-icon">⏳</div><div>加载中...</div></div>
+      </div>
+    </div>
+
+    <!-- WORD BOOK TAB -->
+    <div id="tab-wordbook" class="main-tab">
+      <div class="navbar"><div class="navbar-logo">单词本</div></div>
+      <div class="wordbook-list" id="wordbook-list">
+        <div class="wordbook-empty"><div style="font-size:48px">📖</div><div>还没有收藏的单词</div><div style="font-size:13px">在播放器词汇 Tab 中收藏单词</div></div>
+      </div>
+    </div>
+
+    <!-- STATS TAB -->
+    <div id="tab-stats" class="main-tab">
+      <div class="navbar"><div class="navbar-logo">学习统计</div></div>
+      <div class="stats-scroll">
+        <div class="stats-card">
+          <h3>🔥 学习连击</h3>
+          <div class="streak-row">
+            <div class="streak-item"><div class="streak-num" id="stat-streak">0</div><div class="streak-label">连续天数</div></div>
+            <div class="streak-item"><div class="streak-num" id="stat-today">0</div><div class="streak-label">今日分钟</div></div>
+            <div class="streak-item"><div class="streak-num" id="stat-words">0</div><div class="streak-label">单词数</div></div>
+          </div>
+        </div>
+        <div class="stats-card">
+          <h3>📅 过去 30 天</h3>
+          <canvas id="heatmap-canvas" height="48"></canvas>
+        </div>
+        <div class="stats-card" id="recent-card">
+          <h3>📺 最近观看</h3>
+          <div id="recent-list"><div style="color:var(--gray);font-size:14px">暂无记录</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div id="tab-profile" class="main-tab">
+      <div class="profile-header">
+        <div class="profile-avatar">👤</div>
+        <div>
+          <div class="profile-name" id="profile-name">用户</div>
+          <div class="profile-email" id="profile-email"></div>
+        </div>
+      </div>
+      <div class="profile-scroll">
+        <div class="profile-menu">
+          <div class="menu-item" onclick="switchMainTab('wordbook')"><span class="menu-icon">📖</span><span class="menu-label">我的单词本</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item" onclick="switchMainTab('stats')"><span class="menu-icon">📊</span><span class="menu-label">学习统计</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item" id="menu-admin" style="display:none" onclick="goAdmin()"><span class="menu-icon">⚙️</span><span class="menu-label">管理员后台</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item" onclick="setupNotifications()"><span class="menu-icon">🔔</span><span class="menu-label" id="notif-label">开启每日学习提醒</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item" onclick="doLogout()"><span class="menu-icon">🚪</span><span class="menu-label">退出登录</span><span class="menu-arrow">›</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="home" onclick="switchMainTab('home')"><span class="nav-icon">🏠</span><span class="nav-label">首页</span></button>
+    <button class="nav-item" data-tab="wordbook" onclick="switchMainTab('wordbook')"><span class="nav-icon">📖</span><span class="nav-label">单词本</span></button>
+    <button class="nav-item" data-tab="stats" onclick="switchMainTab('stats')"><span class="nav-icon">📊</span><span class="nav-label">统计</span></button>
+    <button class="nav-item" data-tab="profile" onclick="switchMainTab('profile')"><span class="nav-icon">👤</span><span class="nav-label">我的</span></button>
+  </nav>
+</div>
+
+<!-- ========== PLAYER ========== -->
+<div id="s-player" class="screen">
+  <div class="player-header">
+    <button class="back-btn" onclick="exitPlayer()">←</button>
+    <div class="player-title-text" id="player-title">加载中...</div>
+    <div class="mode-bar">
+      <button class="mode-btn" id="mb-en" onclick="setSubMode('en')">EN</button>
+      <button class="mode-btn active" id="mb-bi" onclick="setSubMode('bilingual')">双语</button>
+      <button class="mode-btn" id="mb-zh" onclick="setSubMode('zh')">中</button>
+    </div>
+  </div>
+
+  <div class="yt-wrap">
+    <div class="yt-ratio"><div id="ytPlayer"></div></div>
+  </div>
+
+  <div class="speed-bar">
+    <span class="speed-lbl">速度</span>
+    <button class="speed-btn" onclick="setSpeed(0.5)">0.5×</button>
+    <button class="speed-btn" onclick="setSpeed(0.75)">0.75×</button>
+    <button class="speed-btn active" id="sp-1" onclick="setSpeed(1)">1×</button>
+    <button class="speed-btn" onclick="setSpeed(1.25)">1.25×</button>
+    <button class="speed-btn" onclick="setSpeed(1.5)">1.5×</button>
+    <div class="gap"></div>
+    <button class="ctrl-btn ctrl-btn-loop" id="loop-btn" onclick="toggleLoop()">🔁 单句</button>
+    <button class="ctrl-btn ctrl-btn-immersive" onclick="openImmersive()">⛶ 沉浸</button>
+    <button class="ctrl-btn" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7)" onclick="exportNotes()" title="导出笔记">📥</button>
+  </div>
+
+  <div class="content-panel">
+    <div class="panel-tabs">
+      <div class="panel-tab active" data-pane="subs" onclick="switchPanelTab('subs')">字幕</div>
+      <div class="panel-tab" data-pane="vocab" onclick="switchPanelTab('vocab')">词汇</div>
+      <div class="panel-tab" data-pane="reading" onclick="switchPanelTab('reading')">跟读</div>
+    </div>
+    <div class="panel-body">
+      <div id="pane-subs" class="panel-pane active">
+        <div class="sub-list" id="sub-list"><div class="sub-empty">暂无字幕</div></div>
+      </div>
+      <div id="pane-vocab" class="panel-pane">
+        <div class="vocab-placeholder" id="vocab-list"><div style="text-align:center;padding:40px;color:var(--gray)">暂无词汇</div></div>
+      </div>
+      <div id="pane-reading" class="panel-pane">
+        <div class="reading-pane" id="reading-pane">
+          <div class="reading-sentence" id="reading-sentence">请在字幕列表中选择一句话</div>
+          <div class="reading-sub" id="reading-sub">点击录音按钮开始跟读</div>
+          <button class="btn-record" id="record-btn" onclick="toggleRecording()">🎤</button>
+          <div id="reading-result" style="display:none" class="reading-score">
+            <div class="score-circle" id="score-num">—</div>
+            <div class="score-feedback" id="score-feedback"></div>
+            <button class="btn btn-primary" style="margin-top:12px" onclick="resetReading()">再试一次</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ADMIN ========== -->
+<div id="s-admin" class="screen">
+  <div class="admin-header">
+    <button class="back-btn" style="color:var(--dark)" onclick="showScreen('main')">←</button>
+    <h1>管理员后台</h1>
+  </div>
+  <div class="admin-scroll">
+    <div class="admin-section">
+      <h2>📤 上传新视频</h2>
+      <input class="admin-input" id="a-ytid" placeholder="YouTube 视频 ID（如 dQw4w9WgXcQ）">
+      <input class="admin-input" id="a-title" placeholder="视频标题">
+      <input class="admin-input" id="a-cat" placeholder="分类（如 日常生活）">
+      <textarea class="admin-textarea" id="a-srt" placeholder="粘贴英文 SRT 字幕内容...&#10;&#10;1&#10;00:00:01,000 --> 00:00:03,500&#10;Hey guys, what is up!&#10;&#10;2&#10;00:00:03,800 --> 00:00:06,200&#10;So today I wanted to talk..."></textarea>
+      <button class="btn btn-primary btn-inline" onclick="adminUpload()">上传并 AI 翻译</button>
+      <div id="admin-status" class="admin-status" style="display:none"></div>
+    </div>
+    <div class="admin-section">
+      <h2>📋 视频列表</h2>
+      <div id="admin-vid-list"><div style="color:var(--gray);font-size:14px">加载中...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== IMMERSIVE OVERLAY ========== -->
+<div id="immersive">
+  <div class="imm-yt-wrap">
+    <div class="imm-yt-ratio"><div id="immYtPlayer"></div></div>
+  </div>
+  <div class="imm-sub-area" id="imm-sub-area">
+    <div class="imm-controls">
+      <button class="imm-btn" id="imm-mb-en" onclick="setSubMode('en');updateImmSub()">EN</button>
+      <button class="imm-btn active" id="imm-mb-bi" onclick="setSubMode('bilingual');updateImmSub()">双语</button>
+      <button class="imm-btn" id="imm-mb-zh" onclick="setSubMode('zh');updateImmSub()">中</button>
+      <button class="imm-btn" id="imm-loop-btn" onclick="toggleLoop()">🔁</button>
+      <button class="imm-btn" onclick="closeImmersive()">✕</button>
+    </div>
+    <div class="imm-en" id="imm-en"></div>
+    <div class="imm-zh" id="imm-zh"></div>
+    <div class="imm-tap-zone" id="imm-tap-zone"></div>
+  </div>
+</div>
+
+<!-- ========== WORD DETAIL SHEET ========== -->
+<div id="word-sheet">
+  <div class="sheet-backdrop" onclick="closeWordSheet()"></div>
+  <div class="sheet-panel">
+    <div class="sheet-handle"></div>
+    <div class="sheet-word" id="sw-word"></div>
+    <div class="sheet-phonetic" id="sw-phonetic"></div>
+    <div style="margin-top:8px"><span id="sw-type" style="font-size:12px;color:var(--orange);font-weight:700;background:rgba(232,98,58,.1);padding:2px 8px;border-radius:4px"></span></div>
+    <div class="sheet-def" id="sw-def"></div>
+    <div class="sheet-ex" id="sw-ex"></div>
+    <button class="btn btn-primary sheet-save-btn" id="sw-save-btn" onclick="toggleSaveWord()">⭐ 收藏到单词本</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Firebase v10 compat -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<!-- YouTube IFrame API (async) -->
+<script src="https://www.youtube.com/iframe_api" async></script>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const CFG = {
+  firebase: {
+    apiKey: 'AIzaSyBcabm0rtyuzWLPQOcSqeDVI7bVcuKBKb0',
+    authDomain: 'engbalabala-9f7d2.firebaseapp.com',
+    projectId: 'engbalabala-9f7d2',
+    storageBucket: 'engbalabala-9f7d2.appspot.com',
+    // messagingSenderId + appId: fill from Firebase Console → Project Settings
+  },
+  adminEmail: 'princeghibli78d@gmail.com',
+  qwenProxy: 'https://sparkling-hat-d313.princeghibli78d.workers.dev',
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let db, auth, currentUser;
+let ytPlayer = null, ytReady = false, pendingVideoId = null;
+let videos = [], filteredVideos = [];
+let activeCategory = '';
+let currentVideo = null, subtitles = [], coreWords = [];
+let subMode = localStorage.getItem('subMode') || 'bilingual';
+let currentSubIdx = -1, isLooping = false;
+let syncTimer = null, studyStartTime = null;
+let isImmersive = false;
+let isRecording = false;
+let recognition = null;
+let currentWordInSheet = null;
+let savedWords = new Set(); // word strings saved by user
+let favoriteVideos = new Set(); // video ids favorited by user
+
+// ============================================================
+// FIREBASE INIT
+// ============================================================
+try {
+  firebase.initializeApp(CFG.firebase);
+  auth = firebase.auth();
+  db = firebase.firestore();
+} catch (e) {
+  console.error('Firebase init failed:', e);
+}
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    const isAdmin = user.email === CFG.adminEmail;
+    document.getElementById('admin-btn').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('menu-admin').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('profile-name').textContent = user.displayName || user.email?.split('@')[0] || '用户';
+    document.getElementById('profile-email').textContent = user.email || '';
+    showScreen('main');
+    loadVideos();
+    loadSavedWords();
+    loadFavorites();
+    loadStats();
+  } else {
+    showScreen('auth');
+  }
+});
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`s-${name}`).classList.add('active');
+  if (name === 'admin') loadAdminList();
+}
+
+function goAdmin() { showScreen('admin'); }
+
+// ============================================================
+// MAIN TAB SWITCHING
+// ============================================================
+function switchMainTab(tab) {
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  if (tab === 'wordbook') renderWordBook();
+  if (tab === 'stats') loadStats();
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('form-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('form-register').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('auth-err').textContent = '';
+}
+
+async function doLogin() {
+  const email = v('login-email'), pwd = v('login-pwd');
+  try { await auth.signInWithEmailAndPassword(email, pwd); }
+  catch (e) { showAuthErr(e.code); }
+}
+
+async function doRegister() {
+  const email = v('reg-email'), pwd = v('reg-pwd');
+  try { await auth.createUserWithEmailAndPassword(email, pwd); }
+  catch (e) { showAuthErr(e.code); }
+}
+
+async function doGoogle() {
+  try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  catch (e) { showAuthErr(e.code); }
+}
+
+async function doLogout() {
+  if (confirm('确定退出登录？')) await auth.signOut();
+}
+
+function showAuthErr(code) {
+  const map = {
+    'auth/user-not-found': '邮箱未注册',
+    'auth/wrong-password': '密码错误',
+    'auth/invalid-credential': '邮箱或密码错误',
+    'auth/email-already-in-use': '邮箱已被注册',
+    'auth/weak-password': '密码至少 6 位',
+    'auth/invalid-email': '邮箱格式错误',
+    'auth/popup-closed-by-user': '登录已取消',
+    'auth/network-request-failed': '网络错误，请重试',
+  };
+  document.getElementById('auth-err').textContent = map[code] || `错误：${code}`;
+}
+
+// ============================================================
+// VIDEO LIBRARY
+// ============================================================
+async function loadVideos() {
+  const grid = document.getElementById('video-grid');
+  grid.innerHTML = '<div class="grid-empty"><div class="grid-empty-icon">⏳</div><div>加载中...</div></div>';
+  try {
+    const snap = await db.collection('videos').orderBy('createdAt', 'desc').get();
+    videos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    buildCategories();
+    filterVideos();
+  } catch (e) {
+    grid.innerHTML = '<div class="grid-empty"><div>加载失败，请刷新</div></div>';
+    console.error(e);
+  }
+}
+
+function buildCategories() {
+  const cats = [...new Set(videos.map(v => v.category).filter(Boolean))];
+  const bar = document.getElementById('categories-bar');
+  bar.innerHTML = `<div class="cat-chip${activeCategory===''?' active':''}" onclick="selectCat('')">全部</div>` +
+    cats.map(c => `<div class="cat-chip${activeCategory===c?' active':''}" onclick="selectCat('${esc(c)}')">${esc(c)}</div>`).join('');
+}
+
+function selectCat(cat) {
+  activeCategory = cat;
+  buildCategories();
+  filterVideos();
+}
+
+function filterVideos() {
+  const q = v('search-input').toLowerCase().trim();
+  filteredVideos = videos.filter(vid => {
+    const matchCat = !activeCategory || vid.category === activeCategory;
+    const matchQ = !q || (vid.title || '').toLowerCase().includes(q) || (vid.category || '').toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('video-grid');
+  if (!filteredVideos.length) {
+    grid.innerHTML = '<div class="grid-empty"><div class="grid-empty-icon">😕</div><div>没有找到视频</div></div>';
+    return;
+  }
+  grid.innerHTML = filteredVideos.map(vid => `
+    <div class="video-card" onclick="openPlayer('${vid.id}')">
+      <div style="position:relative">
+        <img class="video-thumb"
+          src="https://img.youtube.com/vi/${esc(vid.youtubeId)}/hqdefault.jpg"
+          alt="${esc(vid.title)}" loading="lazy"
+          onerror="this.style.background='var(--border)'">
+        <button class="fav-btn" id="fav-${vid.id}"
+          onclick="event.stopPropagation();toggleFav('${vid.id}')"
+          title="${favoriteVideos.has(vid.id) ? '取消收藏' : '收藏'}">
+          ${favoriteVideos.has(vid.id) ? '❤️' : '🤍'}
+        </button>
+      </div>
+      <div class="video-info">
+        <div class="video-title">${esc(vid.title)}</div>
+        <div class="video-meta">
+          ${vid.category ? `<span class="video-badge">${esc(vid.category)}</span>` : ''}
+          ${vid.duration ? formatDur(vid.duration) : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ============================================================
+// PLAYER — open
+// ============================================================
+async function openPlayer(videoId) {
+  const vid = videos.find(v => v.id === videoId);
+  if (!vid) return;
+  currentVideo = vid;
+
+  try { subtitles = JSON.parse(vid.subtitles || '[]'); } catch { subtitles = []; }
+  try { coreWords = JSON.parse(vid.coreWords || '[]'); } catch { coreWords = []; }
+
+  currentSubIdx = -1;
+  isLooping = false;
+  document.getElementById('loop-btn').classList.remove('looping');
+  document.getElementById('imm-loop-btn').classList.remove('active');
+
+  subMode = localStorage.getItem('subMode') || 'bilingual';
+  updateModeBtns();
+
+  document.getElementById('player-title').textContent = vid.title;
+  showScreen('player');
+
+  renderSubList();
+  renderVocabList();
+
+  // Reset reading tab
+  document.getElementById('reading-sentence').textContent = '请在字幕列表中选择一句话';
+  document.getElementById('reading-sub').textContent = '点击录音按钮开始跟读';
+  document.getElementById('reading-result').style.display = 'none';
+  document.getElementById('record-btn').style.display = 'block';
+
+  switchPanelTab('subs');
+
+  studyStartTime = Date.now();
+  initYT(vid.youtubeId);
+}
+
+// ============================================================
+// YOUTUBE PLAYER
+// ============================================================
+function initYT(videoId) {
+  stopSync();
+  if (ytPlayer) { try { ytPlayer.destroy(); } catch {} ytPlayer = null; }
+  document.getElementById('ytPlayer').innerHTML = '';
+
+  if (window.YT && window.YT.Player) {
+    createYT(videoId);
+  } else {
+    pendingVideoId = videoId;
+  }
+}
+
+function createYT(videoId) {
+  ytPlayer = new YT.Player('ytPlayer', {
+    videoId,
+    playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+    events: {
+      onReady: (e) => {
+        ytReady = true;
+        e.target.setPlaybackRate(1);
+        document.querySelectorAll('.speed-btn').forEach(b => b.classList.toggle('active', b.textContent === '1×'));
+        startSync();
+      },
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.PAUSED && isLooping && currentSubIdx >= 0) {
+          // Do nothing — loop timer handles it
+        }
+      },
+    },
+  });
+}
+
+window.onYouTubeIframeAPIReady = function () {
+  ytReady = true;
+  if (pendingVideoId) { createYT(pendingVideoId); pendingVideoId = null; }
+};
+
+function exitPlayer() {
+  stopSync();
+  saveProgress();
+  if (ytPlayer) { try { ytPlayer.pauseVideo(); } catch {} }
+  if (isImmersive) closeImmersive();
+  if (recognition) { try { recognition.stop(); } catch {} isRecording = false; }
+  showScreen('main');
+}
+
+// ============================================================
+// SUBTITLE SYNC
+// ============================================================
+function startSync() {
+  stopSync();
+  if (!subtitles.length) return;
+  syncTimer = setInterval(() => {
+    if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+    let t;
+    try { t = ytPlayer.getCurrentTime(); } catch { return; }
+
+    // Loop: if looping and past end of current sentence, seek back
+    if (isLooping && currentSubIdx >= 0) {
+      const sub = subtitles[currentSubIdx];
+      if (sub && t >= sub.endSec - 0.05) {
+        ytPlayer.seekTo(sub.startSec, true);
+        return;
+      }
+    }
+
+    const idx = findSub(t);
+    if (idx !== currentSubIdx) {
+      currentSubIdx = idx;
+      highlightSub(idx);
+      if (isImmersive) updateImmSub();
+    }
+  }, 150);
+}
+
+function stopSync() {
+  if (syncTimer) { clearInterval(syncTimer); syncTimer = null; }
+}
+
+function findSub(t) {
+  for (let i = 0; i < subtitles.length; i++) {
+    if (t >= subtitles[i].startSec && t < subtitles[i].endSec) return i;
+  }
+  return -1;
+}
+
+function highlightSub(idx) {
+  document.querySelectorAll('.sub-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  if (idx >= 0) {
+    const el = document.querySelector(`.sub-item[data-i="${idx}"]`);
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+}
+
+// ============================================================
+// SUBTITLE RENDERING
+// ============================================================
+function renderSubList() {
+  const list = document.getElementById('sub-list');
+  if (!subtitles.length) {
+    list.innerHTML = '<div class="sub-empty">暂无字幕</div>';
+    return;
+  }
+  const kwSet = buildCoreWordSet();
+  list.innerHTML = subtitles.map((s, i) => {
+    const showEn = subMode !== 'zh';
+    const showZh = subMode !== 'en' && s.zh;
+    const enHtml = highlightWords(s.en, kwSet);
+    return `<div class="sub-item" data-i="${i}" onclick="seekToSub(${i})">
+      <div class="sub-left"><div class="sub-time">${fmtTime(s.startSec)}</div></div>
+      <div class="sub-right">
+        ${showEn ? `<div class="sub-en">${enHtml}</div>` : ''}
+        ${showZh ? `<div class="sub-zh">${esc(s.zh)}</div>` : ''}
+        ${!showEn && !showZh ? `<div class="sub-en">${enHtml}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function seekToSub(i) {
+  if (!ytPlayer || i < 0 || i >= subtitles.length) return;
+  currentSubIdx = i;
+  ytPlayer.seekTo(subtitles[i].startSec, true);
+  ytPlayer.playVideo();
+  // Update reading tab
+  const s = subtitles[i];
+  document.getElementById('reading-sentence').textContent = s.en;
+  document.getElementById('reading-sub').textContent = s.zh || '';
+  document.getElementById('reading-result').style.display = 'none';
+  document.getElementById('record-btn').style.display = 'block';
+  if (isImmersive) updateImmSub();
+}
+
+// ============================================================
+// SUBTITLE MODE
+// ============================================================
+function setSubMode(mode) {
+  subMode = mode;
+  localStorage.setItem('subMode', mode);
+  updateModeBtns();
+  renderSubList();
+  if (currentSubIdx >= 0) setTimeout(() => highlightSub(currentSubIdx), 30);
+}
+
+function updateModeBtns() {
+  ['en', 'bi', 'zh'].forEach(k => {
+    const key = k === 'bi' ? 'bilingual' : k;
+    document.getElementById(`mb-${k}`)?.classList.toggle('active', subMode === key);
+    document.getElementById(`imm-mb-${k}`)?.classList.toggle('active', subMode === key);
+  });
+}
+
+// ============================================================
+// SPEED CONTROL
+// ============================================================
+function setSpeed(rate) {
+  if (!ytPlayer) return;
+  try { ytPlayer.setPlaybackRate(rate); } catch { return; }
+  document.querySelectorAll('.speed-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === `${rate}×`);
+  });
+  showToast(`${rate}× 倍速`);
+}
+
+// ============================================================
+// LOOP
+// ============================================================
+function toggleLoop() {
+  isLooping = !isLooping;
+  document.getElementById('loop-btn').classList.toggle('looping', isLooping);
+  document.getElementById('imm-loop-btn').classList.toggle('active', isLooping);
+  showToast(isLooping ? '单句循环已开启' : '单句循环已关闭');
+}
+
+// ============================================================
+// PANEL TABS
+// ============================================================
+function switchPanelTab(pane) {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.toggle('active', t.dataset.pane === pane));
+  document.querySelectorAll('.panel-pane').forEach(p => p.classList.toggle('active', p.id === `pane-${pane}`));
+}
+
+// ============================================================
+// VOCAB LIST (Phase 2)
+// ============================================================
+function renderVocabList() {
+  const el = document.getElementById('vocab-list');
+  if (!coreWords.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray)">暂无词汇</div>';
+    return;
+  }
+  el.innerHTML = coreWords.map((w, i) => `
+    <div class="vocab-item" onclick="openWordSheet(${i})">
+      <button class="vocab-save ${savedWords.has(w.word) ? 'vocab-saved' : ''}"
+        onclick="event.stopPropagation();quickSaveWord(${i})">
+        ${savedWords.has(w.word) ? '⭐' : '☆'}
+      </button>
+      <span class="vocab-word">${esc(w.word)}</span>
+      <span class="vocab-phonetic">${esc(w.phonetic || '')}</span>
+      <div class="vocab-def">${esc(w.definition || '')}</div>
+    </div>`).join('');
+}
+
+function openWordSheet(i) {
+  const w = coreWords[i];
+  if (!w) return;
+  currentWordInSheet = w;
+  document.getElementById('sw-word').textContent = w.word;
+  document.getElementById('sw-phonetic').textContent = w.phonetic || '';
+  document.getElementById('sw-type').textContent = w.type || '';
+  document.getElementById('sw-def').textContent = w.definition || '';
+  document.getElementById('sw-ex').textContent = w.example || '';
+  const saved = savedWords.has(w.word);
+  document.getElementById('sw-save-btn').textContent = saved ? '✅ 已收藏' : '⭐ 收藏到单词本';
+  document.getElementById('word-sheet').classList.add('active');
+}
+
+function closeWordSheet() {
+  document.getElementById('word-sheet').classList.remove('active');
+  currentWordInSheet = null;
+}
+
+async function toggleSaveWord() {
+  if (!currentWordInSheet || !currentUser) return;
+  const word = currentWordInSheet;
+  const isSaved = savedWords.has(word.word);
+  if (isSaved) {
+    await removeWordFromBook(word.word);
+    showToast(`"${word.word}" 已从单词本移除`);
+  } else {
+    await addWordToBook(word);
+    showToast(`"${word.word}" 已收藏`);
+  }
+  closeWordSheet();
+  renderVocabList();
+}
+
+async function quickSaveWord(i) {
+  const w = coreWords[i];
+  if (!w || !currentUser) return;
+  if (savedWords.has(w.word)) {
+    await removeWordFromBook(w.word);
+    showToast(`"${w.word}" 已移除`);
+  } else {
+    await addWordToBook(w);
+    showToast(`"${w.word}" 已收藏`);
+  }
+  renderVocabList();
+}
+
+async function addWordToBook(word) {
+  savedWords.add(word.word);
+  try {
+    await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word.word).set({
+      word: word.word, phonetic: word.phonetic || '', type: word.type || '',
+      definition: word.definition || '', example: word.example || '',
+      videoId: currentVideo?.id || '', createdAt: new Date().toISOString(),
+    });
+  } catch (e) { savedWords.delete(word.word); throw e; }
+}
+
+async function removeWordFromBook(wordStr) {
+  savedWords.delete(wordStr);
+  try {
+    await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(wordStr).delete();
+  } catch {}
+}
+
+async function loadSavedWords() {
+  if (!currentUser) return;
+  try {
+    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
+    savedWords = new Set(snap.docs.map(d => d.id));
+  } catch {}
+}
+
+// ============================================================
+// VIDEO FAVORITES (Phase 2 — P1, 乐观更新)
+// ============================================================
+async function loadFavorites() {
+  if (!currentUser) return;
+  try {
+    const snap = await db.collection('users').doc(currentUser.uid).collection('collections').get();
+    favoriteVideos = new Set(snap.docs.map(d => d.id));
+    // Update any already-rendered cards
+    document.querySelectorAll('[id^="fav-"]').forEach(btn => {
+      const vid = btn.id.replace('fav-', '');
+      btn.textContent = favoriteVideos.has(vid) ? '❤️' : '🤍';
+    });
+  } catch {}
+}
+
+async function toggleFav(videoId) {
+  if (!currentUser) { showToast('请先登录'); return; }
+  const isFav = favoriteVideos.has(videoId);
+  // Optimistic update
+  if (isFav) favoriteVideos.delete(videoId); else favoriteVideos.add(videoId);
+  const btn = document.getElementById(`fav-${videoId}`);
+  if (btn) btn.textContent = favoriteVideos.has(videoId) ? '❤️' : '🤍';
+  showToast(favoriteVideos.has(videoId) ? '已收藏视频' : '已取消收藏');
+  // Sync to Firestore
+  try {
+    const ref = db.collection('users').doc(currentUser.uid).collection('collections').doc(videoId);
+    if (isFav) await ref.delete(); else await ref.set({ videoId, addedAt: new Date().toISOString() });
+  } catch {
+    // Rollback on error
+    if (isFav) favoriteVideos.add(videoId); else favoriteVideos.delete(videoId);
+    if (btn) btn.textContent = favoriteVideos.has(videoId) ? '❤️' : '🤍';
+    showToast('操作失败，请重试');
+  }
+}
+
+// ============================================================
+// SUBTITLE KEYWORD HIGHLIGHTING (Phase 2 — P1)
+// ============================================================
+function buildCoreWordSet() {
+  return new Set(coreWords.map(w => (w.word || '').toLowerCase()).filter(Boolean));
+}
+
+function highlightWords(text, wordSet) {
+  if (!wordSet.size) return esc(text);
+  const escaped = [...wordSet].map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+  let result = '', lastIdx = 0, match;
+  while ((match = re.exec(text)) !== null) {
+    result += esc(text.slice(lastIdx, match.index));
+    result += `<span class="kw" onclick="openWordByName('${esc(match[0].toLowerCase())}')">${esc(match[0])}</span>`;
+    lastIdx = match.index + match[0].length;
+  }
+  result += esc(text.slice(lastIdx));
+  return result;
+}
+
+function openWordByName(wordLower) {
+  const w = coreWords.find(x => (x.word || '').toLowerCase() === wordLower);
+  if (w) { const i = coreWords.indexOf(w); openWordSheet(i); }
+}
+
+// ============================================================
+// EXPORT NOTES (Phase 3 — P2)
+// ============================================================
+function exportNotes() {
+  if (!currentVideo) return;
+  const title = currentVideo.title || 'VlogEng';
+  const subs = subtitles.map((s, i) =>
+    `<tr><td style="color:#999;font-size:12px;padding:6px 10px;white-space:nowrap">${fmtTime(s.startSec)}</td>
+     <td style="padding:6px 10px"><div style="font-weight:600">${esc(s.en)}</div>${s.zh ? `<div style="color:#666;font-size:13px">${esc(s.zh)}</div>` : ''}</td></tr>`
+  ).join('');
+  const words = coreWords.map(w =>
+    `<tr><td style="padding:6px 10px;font-weight:700">${esc(w.word)}</td>
+     <td style="padding:6px 10px;color:#999;font-size:12px">${esc(w.phonetic||'')}</td>
+     <td style="padding:6px 10px;color:#E8623A;font-size:12px">${esc(w.type||'')}</td>
+     <td style="padding:6px 10px">${esc(w.definition||'')}</td></tr>`
+  ).join('');
+  const html = `<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>${esc(title)} — VlogEng 笔记</title>
+<style>body{font-family:-apple-system,Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#1A1A18}
+h1{color:#E8623A;margin-bottom:4px}h2{margin:28px 0 12px;font-size:16px;color:#5A5750}
+table{width:100%;border-collapse:collapse}tr:nth-child(even){background:#FAF8F4}</style></head>
+<body><h1>VlogEng 学习笔记</h1><p style="color:#999;font-size:13px">导出时间：${new Date().toLocaleString('zh-CN')}</p>
+<h2>📺 ${esc(title)}</h2>
+${subs.length ? `<h2>🗣 字幕（${subs.length} 句）</h2><table>${subs}</table>` : ''}
+${words.length ? `<h2>📖 核心词汇（${words.length} 个）</h2><table>${words}</table>` : ''}
+</body></html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `VlogEng_${title.slice(0, 20).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_')}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('笔记已导出');
+}
+
+// ============================================================
+// PUSH NOTIFICATIONS (Phase 3 — P2)
+// ============================================================
+async function setupNotifications() {
+  if (!('Notification' in window)) { showToast('您的浏览器不支持推送通知'); return; }
+  if (Notification.permission === 'granted') {
+    showToast('通知已开启 ✅');
+    document.getElementById('notif-label').textContent = '每日学习提醒已开启 ✅';
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    document.getElementById('notif-label').textContent = '每日学习提醒已开启 ✅';
+    showToast('通知已开启！');
+    // Show a welcome notification
+    new Notification('VlogEng 🎉', { body: '每日学习提醒已开启，我们每天会提醒你来学习！', icon: 'icons/icon-192.png' });
+  } else {
+    showToast('通知权限已拒绝');
+  }
+}
+
+// ============================================================
+// WORD BOOK TAB
+// ============================================================
+async function renderWordBook() {
+  const el = document.getElementById('wordbook-list');
+  el.innerHTML = '<div style="padding:20px;color:var(--gray)">加载中...</div>';
+  try {
+    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary')
+      .orderBy('createdAt', 'desc').get();
+    const words = snap.docs.map(d => d.data());
+    if (!words.length) {
+      el.innerHTML = '<div class="wordbook-empty"><div style="font-size:48px">📖</div><div>还没有收藏的单词</div><div style="font-size:13px">在播放器词汇 Tab 中收藏单词</div></div>';
+      return;
+    }
+    el.innerHTML = words.map(w => `
+      <div class="word-card">
+        <div class="word-top">
+          <span class="word-word">${esc(w.word)}</span>
+          <span class="word-phonetic">${esc(w.phonetic || '')}</span>
+          <span class="word-type">${esc(w.type || '')}</span>
+        </div>
+        <div class="word-def">${esc(w.definition || '')}</div>
+        ${w.example ? `<div class="word-ex">${esc(w.example)}</div>` : ''}
+        <button class="word-del" onclick="removeWordAndRefresh('${esc(w.word)}')">× 移除</button>
+      </div>`).join('');
+  } catch {
+    el.innerHTML = '<div style="padding:20px;color:var(--gray)">加载失败</div>';
+  }
+}
+
+async function removeWordAndRefresh(word) {
+  await removeWordFromBook(word);
+  renderWordBook();
+  showToast(`"${word}" 已移除`);
+}
+
+// ============================================================
+// READING / PRONUNCIATION (Phase 2)
+// ============================================================
+function toggleRecording() {
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    showToast('您的浏览器不支持语音识别（推荐使用 Chrome）');
+    return;
+  }
+  if (isRecording) {
+    if (recognition) recognition.stop();
+    return;
+  }
+  const sentence = document.getElementById('reading-sentence').textContent;
+  if (!sentence || sentence === '请在字幕列表中选择一句话') {
+    showToast('请先在字幕列表中点击选择一句话');
+    return;
+  }
+
+  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    document.getElementById('record-btn').classList.add('recording');
+    document.getElementById('record-btn').textContent = '⏹';
+    document.getElementById('reading-sub').textContent = '正在录音，请跟读...';
+  };
+
+  recognition.onresult = async (e) => {
+    const transcript = e.results[0][0].transcript;
+    isRecording = false;
+    document.getElementById('record-btn').classList.remove('recording');
+    document.getElementById('record-btn').textContent = '🎤';
+    document.getElementById('reading-sub').textContent = `您说的：${transcript}`;
+    await scoreReading(sentence, transcript);
+  };
+
+  recognition.onerror = (e) => {
+    isRecording = false;
+    document.getElementById('record-btn').classList.remove('recording');
+    document.getElementById('record-btn').textContent = '🎤';
+    showToast('录音错误：' + e.error);
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    document.getElementById('record-btn').classList.remove('recording');
+    document.getElementById('record-btn').textContent = '🎤';
+  };
+
+  recognition.start();
+}
+
+async function scoreReading(original, transcript) {
+  document.getElementById('reading-sub').textContent = '正在评分...';
+  try {
+    const prompt = `你是英语发音评分助手。用户跟读了以下英语句子，请评估发音并以JSON格式返回评分。\n\n原句：${original}\n用户说的：${transcript}\n\n请返回格式：{"score": 85, "accuracy": 90, "fluency": 80, "feedback": "整体发音不错。[具体建议]"}`;
+    const resp = await callQwen(prompt);
+    const jsonMatch = resp.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Invalid response');
+    const result = JSON.parse(jsonMatch[0]);
+    document.getElementById('score-num').textContent = result.score || '—';
+    document.getElementById('score-feedback').textContent = result.feedback || '';
+    document.getElementById('reading-result').style.display = 'block';
+    document.getElementById('record-btn').style.display = 'none';
+    // Save to Firestore
+    if (currentUser && currentSubIdx >= 0) {
+      db.collection('users').doc(currentUser.uid).collection('readingScores').add({
+        videoId: currentVideo?.id, sentenceIdx: currentSubIdx,
+        score: result.score, accuracy: result.accuracy, fluency: result.fluency,
+        createdAt: new Date().toISOString(),
+      }).catch(() => {});
+    }
+  } catch {
+    document.getElementById('reading-sub').textContent = '评分失败，请重试';
+  }
+}
+
+function resetReading() {
+  document.getElementById('reading-result').style.display = 'none';
+  document.getElementById('record-btn').style.display = 'block';
+  document.getElementById('reading-sub').textContent = '点击录音按钮开始跟读';
+}
+
+// ============================================================
+// IMMERSIVE MODE (Phase 1 P0)
+// ============================================================
+function openImmersive() {
+  isImmersive = true;
+  document.getElementById('immersive').classList.add('active');
+  updateImmSub();
+
+  // Touch: tap to pause/play; swipe up to close; swipe L/R for prev/next
+  const zone = document.getElementById('imm-tap-zone');
+  let tx = 0, ty = 0;
+
+  zone.ontouchstart = (e) => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; };
+  zone.ontouchend = (e) => {
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+      // Tap — pause/play
+      if (ytPlayer) {
+        try {
+          const state = ytPlayer.getPlayerState();
+          if (state === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+          else ytPlayer.playVideo();
+        } catch {}
+      }
+    } else if (dy < -50 && Math.abs(dy) > Math.abs(dx)) {
+      closeImmersive();
+    } else if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) seekToSub(Math.min(currentSubIdx + 1, subtitles.length - 1));
+      else seekToSub(Math.max(currentSubIdx - 1, 0));
+    }
+  };
+}
+
+function closeImmersive() {
+  isImmersive = false;
+  document.getElementById('immersive').classList.remove('active');
+}
+
+function updateImmSub() {
+  const s = subtitles[currentSubIdx];
+  document.getElementById('imm-en').textContent = s && subMode !== 'zh' ? s.en : '';
+  document.getElementById('imm-zh').textContent = s && subMode !== 'en' ? (s.zh || '') : '';
+}
+
+// ============================================================
+// PROGRESS TRACKING (Phase 3)
+// ============================================================
+async function saveProgress() {
+  if (!currentUser || !currentVideo) return;
+  const studySec = Math.round((Date.now() - (studyStartTime || Date.now())) / 1000);
+  if (studySec < 5) return;
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const ref = db.collection('users').doc(currentUser.uid).collection('dailyStats').doc(today);
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(ref);
+      const prev = doc.exists ? doc.data() : { studySeconds: 0, videosWatched: 0 };
+      tx.set(ref, {
+        studySeconds: (prev.studySeconds || 0) + studySec,
+        videosWatched: (prev.videosWatched || 0) + 1,
+        date: today,
+      });
+    });
+    if (currentSubIdx >= 0) {
+      await db.collection('users').doc(currentUser.uid).collection('progress').doc(currentVideo.id).set({
+        lastSentenceIdx: currentSubIdx,
+        totalSentences: subtitles.length,
+        updatedAt: new Date().toISOString(),
+        videoId: currentVideo.id,
+        title: currentVideo.title,
+        thumbUrl: `https://img.youtube.com/vi/${currentVideo.youtubeId}/default.jpg`,
+      });
+    }
+  } catch (e) { console.error('saveProgress', e); }
+}
+
+// ============================================================
+// STATS PANEL (Phase 3)
+// ============================================================
+async function loadStats() {
+  if (!currentUser) return;
+  try {
+    // Vocab count
+    const vocSnap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
+    document.getElementById('stat-words').textContent = vocSnap.size;
+    savedWords = new Set(vocSnap.docs.map(d => d.id));
+
+    // Daily stats (last 30 days)
+    const today = new Date();
+    const statsMap = {};
+    let streak = 0, todayMin = 0;
+    const dailySnap = await db.collection('users').doc(currentUser.uid).collection('dailyStats').get();
+    dailySnap.docs.forEach(d => { statsMap[d.id] = d.data(); });
+    // Compute streak
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const k = d.toISOString().slice(0, 10);
+      if (statsMap[k] && statsMap[k].studySeconds > 0) { if (i === 0) todayMin = Math.round(statsMap[k].studySeconds / 60); streak++; }
+      else if (i > 0) break;
+    }
+    document.getElementById('stat-streak').textContent = streak;
+    document.getElementById('stat-today').textContent = todayMin;
+    drawHeatmap(statsMap);
+
+    // Recent progress
+    const progSnap = await db.collection('users').doc(currentUser.uid).collection('progress')
+      .orderBy('updatedAt', 'desc').limit(5).get();
+    const recent = progSnap.docs.map(d => d.data());
+    const rList = document.getElementById('recent-list');
+    if (!recent.length) { rList.innerHTML = '<div style="color:var(--gray);font-size:14px">暂无记录</div>'; return; }
+    rList.innerHTML = recent.map(r => {
+      const pct = r.totalSentences ? Math.round(r.lastSentenceIdx / r.totalSentences * 100) : 0;
+      return `<div class="recent-item">
+        <img class="recent-thumb" src="${esc(r.thumbUrl || '')}" alt="" onerror="this.style.background='var(--border)'">
+        <div class="recent-info">
+          <div class="recent-title">${esc(r.title || '')}</div>
+          <div class="recent-progress"><div class="recent-bar" style="width:${pct}%"></div></div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">${pct}% · ${r.lastSentenceIdx}/${r.totalSentences} 句</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) { console.error('loadStats', e); }
+}
+
+function drawHeatmap(statsMap) {
+  const canvas = document.getElementById('heatmap-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const today = new Date();
+  const DAYS = 30;
+  const gap = 3;
+  const totalW = canvas.clientWidth || 300;
+  const cell = Math.floor((totalW - (DAYS - 1) * gap) / DAYS);
+  const h = cell;
+  canvas.width = totalW;
+  canvas.height = h;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < DAYS; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (DAYS - 1 - i));
+    const k = d.toISOString().slice(0, 10);
+    const sec = statsMap[k]?.studySeconds || 0;
+    const intensity = Math.min(sec / 1800, 1); // 30 min = full
+    ctx.fillStyle = sec === 0 ? '#E4DFD6' : lerpColor('#FFD4C4', '#E8623A', intensity);
+    const x = i * (cell + gap), r = 3;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x, 0, cell, h, r);
+    } else {
+      ctx.moveTo(x + r, 0); ctx.arcTo(x + cell, 0, x + cell, h, r);
+      ctx.arcTo(x + cell, h, x, h, r); ctx.arcTo(x, h, x, 0, r); ctx.arcTo(x, 0, x + cell, 0, r);
+      ctx.closePath();
+    }
+    ctx.fill();
+  }
+}
+
+function lerpColor(a, b, t) {
+  const ah = parseInt(a.slice(1), 16), bh = parseInt(b.slice(1), 16);
+  const ar = (ah >> 16) & 0xff, ag = (ah >> 8) & 0xff, ab = ah & 0xff;
+  const br = (bh >> 16) & 0xff, bg = (bh >> 8) & 0xff, bb = bh & 0xff;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const bv = Math.round(ab + (bb - ab) * t);
+  return `rgb(${r},${g},${bv})`;
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+async function adminUpload() {
+  if (currentUser?.email !== CFG.adminEmail) { showToast('无权限'); return; }
+  const ytId = v('a-ytid').trim();
+  const title = v('a-title').trim();
+  const cat = v('a-cat').trim();
+  const srt = v('a-srt').trim();
+  if (!ytId || !title || !srt) { showToast('请填写完整信息'); return; }
+
+  const statusEl = document.getElementById('admin-status');
+  statusEl.style.display = 'block';
+  const setStatus = (msg) => { statusEl.textContent = msg; };
+
+  try {
+    setStatus('⏳ 解析 SRT 字幕...');
+    const parsed = parseSRT(srt);
+    setStatus(`✅ 解析 ${parsed.length} 句，正在 AI 翻译（约 ${Math.ceil(parsed.length / 20) * 5}s）...`);
+
+    const translated = await translateSubtitles(parsed, setStatus);
+    setStatus('✅ 翻译完成，正在提取核心词汇...');
+
+    const words = await extractVocab(translated.slice(0, 10), setStatus);
+    setStatus('✅ 词汇提取完成，保存到数据库...');
+
+    await db.collection('videos').add({
+      title, youtubeId: ytId,
+      category: cat || '未分类',
+      subtitles: JSON.stringify(translated),
+      coreWords: JSON.stringify(words),
+      thumbnailUrl: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.uid,
+    });
+    setStatus('🎉 上传成功！刷新首页即可看到视频。');
+    ['a-ytid', 'a-title', 'a-cat', 'a-srt'].forEach(id => document.getElementById(id).value = '');
+    await loadVideos();
+    loadAdminList();
+  } catch (e) {
+    setStatus(`❌ 失败：${e.message}`);
+    console.error(e);
+  }
+}
+
+async function loadAdminList() {
+  const el = document.getElementById('admin-vid-list');
+  if (!el) return;
+  try {
+    const snap = await db.collection('videos').orderBy('createdAt', 'desc').limit(30).get();
+    const vids = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!vids.length) { el.innerHTML = '<div style="color:var(--gray);font-size:14px">还没有视频</div>'; return; }
+    el.innerHTML = vids.map(v => `
+      <div class="admin-vid-item">
+        <img class="admin-vid-thumb" src="https://img.youtube.com/vi/${esc(v.youtubeId)}/default.jpg" alt="">
+        <div class="admin-vid-info">
+          <div class="admin-vid-title">${esc(v.title)}</div>
+          <div class="admin-vid-sub">${esc(v.category || '')} · ${esc(v.youtubeId)}</div>
+        </div>
+        <button class="admin-del-btn" onclick="adminDelete('${v.id}')">🗑</button>
+      </div>`).join('');
+  } catch { el.innerHTML = '<div style="color:var(--gray)">加载失败</div>'; }
+}
+
+async function adminDelete(id) {
+  if (!confirm('确定删除此视频？')) return;
+  await db.collection('videos').doc(id).delete();
+  showToast('已删除');
+  loadVideos();
+  loadAdminList();
+}
+
+// ============================================================
+// SRT PARSER
+// ============================================================
+function parseSRT(srt) {
+  const text = srt.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  const blocks = text.split(/\n\n+/);
+  const raws = [];
+
+  for (const block of blocks) {
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    const tsLine = lines.find(l => l.includes('-->'));
+    if (!tsLine) continue;
+    const [startStr, endStr] = tsLine.split('-->').map(s => s.trim());
+    const startSec = parseTS(startStr);
+    const endSec = parseTS(endStr);
+    const textLines = lines.filter(l => !l.includes('-->') && !/^\d+$/.test(l));
+    const en = textLines.join(' ').replace(/<[^>]+>/g, '').trim();
+    if (en) raws.push({ startSec, endSec, en });
+  }
+
+  // Merge sentences (join non-terminal lines)
+  const merged = [];
+  let cur = null;
+  for (const r of raws) {
+    if (!cur) { cur = { ...r }; continue; }
+    const prevEnds = /[.!?…]$/.test(cur.en);
+    if (!prevEnds && cur.endSec >= r.startSec - 0.5) {
+      cur.en += ' ' + r.en;
+      cur.endSec = r.endSec;
+    } else {
+      merged.push({ ...cur, start: fmtTime(cur.startSec), zh: '' });
+      cur = { ...r };
+    }
+  }
+  if (cur) merged.push({ ...cur, start: fmtTime(cur.startSec), zh: '' });
+  return merged;
+}
+
+function parseTS(ts) {
+  const clean = ts.replace(',', '.').trim();
+  const parts = clean.split(':');
+  const h = parseInt(parts[0]) || 0, m = parseInt(parts[1]) || 0, s = parseFloat(parts[2]) || 0;
+  return h * 3600 + m * 60 + s;
+}
+
+// ============================================================
+// QWEN AI — Translation
+// ============================================================
+async function translateSubtitles(subs, setStatus) {
+  const BATCH = 20;
+  const result = subs.map(s => ({ ...s }));
+  for (let i = 0; i < subs.length; i += BATCH) {
+    if (setStatus) setStatus(`⏳ 翻译中 ${i}/${subs.length}...`);
+    const batch = subs.slice(i, i + BATCH).map((s, j) => ({ idx: i + j, en: s.en }));
+    try {
+      const prompt = `你是英语口语字幕翻译助手。请将以下英语字幕翻译成自然流畅的中文，要求：
+1. 保留口语化风格，不要过度书面化
+2. 人名、地名、品牌名等专有名词保留英文
+3. 严格按 JSON 数组格式返回，与输入一一对应
+4. 不要添加任何额外文字或 markdown
+
+输入：${JSON.stringify(batch)}
+输出（只返回 JSON 数组，每项含 idx 和 zh 字段）：`;
+      const resp = await callQwen(prompt);
+      const jsonMatch = resp.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const translations = JSON.parse(jsonMatch[0]);
+        translations.forEach(t => { if (result[t.idx]) result[t.idx].zh = t.zh || result[t.idx].en; });
+      }
+    } catch (e) {
+      console.warn('Translation batch failed:', e);
+      batch.forEach((_, j) => { result[i + j].zh = result[i + j].en; });
+    }
+  }
+  return result;
+}
+
+// ============================================================
+// QWEN AI — Vocab Extraction
+// ============================================================
+async function extractVocab(subs, setStatus) {
+  if (setStatus) setStatus('⏳ 提取核心词汇...');
+  const text = subs.map(s => s.en).join(' ');
+  const prompt = `请从以下英语口语文本中提取 8-10 个重点学习词汇，要求：
+1. 选择对中国英语学习者最有价值的词汇（非基础词）
+2. 返回 JSON 数组，每项含：word（词），phonetic（音标），type（词性如 n./v./adj.），definition（中文释义），example（例句）
+3. 只返回 JSON 数组
+
+文本：${text.slice(0, 1000)}`;
+  try {
+    const resp = await callQwen(prompt);
+    const jsonMatch = resp.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) return [];
+    return JSON.parse(jsonMatch[0]);
+  } catch { return []; }
+}
+
+// ============================================================
+// QWEN API CALLER
+// ============================================================
+async function callQwen(prompt) {
+  const resp = await fetch(CFG.qwenProxy, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'qwen-plus',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+    }),
+  });
+  if (!resp.ok) throw new Error(`Qwen API ${resp.status}: ${await resp.text()}`);
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+// ============================================================
+// PWA — Service Worker & Install
+// ============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW:', e));
+  });
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Could show a custom install button here
+});
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function v(id) { return document.getElementById(id)?.value || ''; }
+
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function fmtTime(sec) {
+  if (!sec && sec !== 0) return '';
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function formatDur(sec) {
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
